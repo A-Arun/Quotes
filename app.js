@@ -1,60 +1,81 @@
 var port = process.env.PORT || 3000,
     http = require('http'),
     fs = require('fs');
+var express = require('express');
+var app = express();
+var path = require('path');
+var bodyParser = require('body-parser');
 
-var app = http.createServer(function (req, res) {
-  if (req.url.indexOf('/img') != -1) {
-    var filePath = req.url.split('/img')[1];
-    fs.readFile(__dirname + '/public/img' + filePath, function (err, data) {
-      if (err) {
-        res.writeHead(404, {'Content-Type': 'text/plain'});
-        res.write('Error 404: Resource not found.');
-        console.log(err);
-      } else {
-        res.writeHead(200, {'Content-Type': 'image/svg+xml'});
-        res.write(data);
-      }
-      res.end();
+var routes = require('./routes/index');
+app.set('views', path.join(__dirname, 'views'));
+
+/* Render HTML  Start */
+var cons = require('consolidate');
+
+// view engine setup
+app.engine('html', cons.swig)
+app.set('view engine', 'html');
+
+//jade
+app.set('view engine', 'jade');
+
+app.use(express.static('app'));
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.json());
+
+
+app.get('/welcome', function(req, res){
+return res.send('Welcome to Module 2 Homework!');
+
+});
+
+app.get('/1',function(req,res)
+       {
+        return res.send("Hello Just testing!!!");
+        });
+
+app.use('/', routes);
+
+app.get('/listUsers', function (req, res) {
+   fs.readFile( __dirname + "/public/" + "users.json", 'utf8', function (err, data) {
+      console.log( data );
+      res.end( data );
+   });
+});
+
+app.use(function(req, res, next){
+  res.locals.user = req.user;
+//  res.locals.authenticated = ! req.user.anonymous;
+  next();
+});
+
+app.set('view engine', 'ejs')
+
+//var html = new EJS({url: 'simple.ejs'}).render(data);
+
+app.get('/ejs', (req, res) => {
+  var users;
+  fs.readFile( __dirname + "/Public/" + "users.json", 'utf8', function (err, result) {
+      users = JSON.parse(JSON.stringify(result));
+      console.log(users);
+      res.render('simple.ejs', {users:users})
+     });  
+   });
+   
+
+//Preferred Section
+app.get('/users', (req, res) => {
+  //var users;
+  fs.readFile( __dirname + "/Public/" + "users.json", 'utf8', function (err, result) {
+   
+       res.render('simple.ejs',{users:result});
+
+     });  
+   });
+   
+    app.listen('0.0.0.0', function () {
+        console.log('Our app is listening on port 5000!');
     });
-  } else if (req.url.indexOf('/js') != -1) {
-    var filePath = req.url.split('/js')[1];
-    fs.readFile(__dirname + '/public/js' + filePath, function (err, data) {
-      if (err) {
-        res.writeHead(404, {'Content-Type': 'text/plain'});
-        res.write('Error 404: Resource not found.');
-        console.log(err);
-      } else {
-        res.writeHead(200, {'Content-Type': 'text/javascript'});
-        res.write(data);
-      }
-      res.end();
-    });
-  } else if(req.url.indexOf('/css') != -1) {
-    var filePath = req.url.split('/css')[1];
-    fs.readFile(__dirname + '/public/css' + filePath, function (err, data) {
-      if (err) {
-        res.writeHead(404, {'Content-Type': 'text/plain'});
-        res.write('Error 404: Resource not found.');
-        console.log(err);
-      } else {
-        res.writeHead(200, {'Content-Type': 'text/css'});
-        res.write(data);
-      }
-      res.end();
-    });
-  } else {
-    fs.readFile(__dirname + '/public/index.html', function (err, data) {
-      if (err) {
-        res.writeHead(404, {'Content-Type': 'text/plain'});
-        res.write('Error 404: Resource not found.');
-        console.log(err);
-      } else {
-        res.writeHead(200, {'Content-Type': 'text/html'});
-        res.write(data);
-      }
-      res.end();
-    });
-  }
-}).listen(port, '0.0.0.0');
 
 module.exports = app;
